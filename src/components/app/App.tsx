@@ -1,5 +1,4 @@
 import { CSSProperties, useState } from 'react';
-import clsx from 'clsx';
 
 import { Article } from '../article';
 import { ArticleParamsForm } from '../article-params-form';
@@ -8,7 +7,6 @@ import { defaultArticleState, ArticleStateType } from '../../constants/articlePr
 import styles from './App.module.scss';
 
 export const App = () => {
-    // Создаем состояние для стилей статьи
     const [articleState, setArticleState] = useState<ArticleStateType>(defaultArticleState);
 
     return (

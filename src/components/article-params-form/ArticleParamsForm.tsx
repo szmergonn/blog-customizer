@@ -1,4 +1,4 @@
-import { useState, useEffect, FormEvent } from 'react';
+import { useState, useEffect, FormEvent, useRef } from 'react';
 import clsx from 'clsx';
 
 import { ArrowButton } from 'src/ui/arrow-button';
@@ -7,6 +7,7 @@ import { RadioGroup } from 'src/ui/radio-group';
 import { Select } from 'src/ui/select';
 import { Separator } from 'src/ui/separator';
 import { Text } from 'src/ui/text';
+import { useClose } from 'src/hooks/useClose';
 
 import { 
     ArticleStateType, 
@@ -26,60 +27,44 @@ type ArticleParamsFormProps = {
 };
 
 export const ArticleParamsForm = ({ articleState, setArticleState }: ArticleParamsFormProps) => {
-    // Состояние для открытия/закрытия формы
-    const [isOpen, setIsOpen] = useState(false);
-    
-    // Состояние для временного хранения настроек формы
-    const [formState, setFormState] = useState<ArticleStateType>(articleState);
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-    // Обновляем formState при изменении articleState
+    const [formState, setFormState] = useState<ArticleStateType>(articleState);
+    
+    const formRef = useRef<HTMLDivElement>(null);
+
     useEffect(() => {
         setFormState(articleState);
     }, [articleState]);
 
-    // Обработчик открытия/закрытия формы
     const handleToggle = () => {
-        setIsOpen(!isOpen);
+        setIsMenuOpen(!isMenuOpen);
     };
 
-    // Обработчик клика вне формы (закрытие формы)
-    useEffect(() => {
-        const handleClickOutside = (e: MouseEvent) => {
-            const target = e.target as HTMLElement;
-            const form = document.querySelector(`.${styles.container}`);
-            const arrowButton = document.querySelector('[aria-label="Открыть/Закрыть форму параметров статьи"]');
+    const handleClose = () => {
+        setIsMenuOpen(false);
+    };
 
-            // Если клик был вне формы и вне кнопки-стрелки, то закрываем форму
-            if (isOpen && form && !form.contains(target) && arrowButton && !arrowButton.contains(target)) {
-                setIsOpen(false);
-            }
-        };
+    useClose({
+        isOpen: isMenuOpen,
+        onClose: handleClose,
+        rootRef: formRef
+    });
 
-        document.addEventListener('mousedown', handleClickOutside);
-
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, [isOpen]);
-
-    // Обработчик применения настроек
     const handleApply = (e: FormEvent) => {
         e.preventDefault();
         setArticleState(formState);
     };
 
-    // Обработчик сброса настроек
     const handleReset = () => {
-        // Сбрасываем форму к начальным значениям
         setFormState(defaultArticleState);
-        // И сразу применяем изменения к статье
         setArticleState(defaultArticleState);
     };
 
     return (
         <>
-            <ArrowButton isOpen={isOpen} onClick={handleToggle} />
-            <aside className={clsx(styles.container, { [styles.container_open]: isOpen })}>
+            <ArrowButton isOpen={isMenuOpen} onClick={handleToggle} />
+            <aside className={clsx(styles.container, { [styles.container_open]: isMenuOpen })} ref={formRef}>
                 <form className={styles.form} onSubmit={handleApply}>
                     <Text as="h2" weight={800} size={31} uppercase>
                         Задайте параметры
@@ -116,9 +101,8 @@ export const ArticleParamsForm = ({ articleState, setArticleState }: ArticlePara
                         onChange={(option) => setFormState({...formState, backgroundColor: option})}
                     />
                     
-                    <RadioGroup
+                    <Select
                         title="Ширина контента"
-                        name="contentWidth"
                         selected={formState.contentWidth}
                         options={contentWidthArr}
                         onChange={(option) => setFormState({...formState, contentWidth: option})}
